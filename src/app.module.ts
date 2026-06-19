@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { JobsModule } from './jobs/jobs.module';
+import { AssessmentsModule } from './assessments/assessments.module';
 import { JwtGuard } from './auth/guards/jwt.guard';
 
 @Module({
@@ -21,6 +22,7 @@ import { JwtGuard } from './auth/guards/jwt.guard';
     UsersModule,
     CoursesModule,
     JobsModule,
+    AssessmentsModule,
   ],
   controllers: [AppController],
   providers: [
