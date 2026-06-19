@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  graduate
+  mentor
+  admin
+}
+
+enum CourseLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum CourseStatus {
+  not_started
+  in_progress
+  completed
+}
+
+enum JobType {
+  full_time
+  part_time
+  internship
+  freelance
+  remote
+}
+
+enum ApplicationStatus {
+  saved
+  applied
+  interviewing
+  rejected
+  offered
+}
+
+enum AssessmentDifficulty {
+  easy
+  medium
+  hard
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password_hash   String
+  full_name       String
+  role            UserRole        @default(graduate)
+  bio             String?
+  skills          String[]        @default([])
+  career_goal     String?
+  profile_picture String?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relations
+  user_courses    UserCourse[]
+  user_assessments UserAssessment[]
+  user_jobs       UserJob[]
+  mentor_profile  Mentor?
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  title       String
+  description String
+  provider    String       // e.g., "YouTube", "Coursera", "freeCodeCamp"
+  url         String
+  category    String       // e.g., "Frontend", "Backend", "Data Science"
+  level       CourseLevel  @default(beginner)
+  duration    String       // e.g., "2 hours", "4 weeks"
+  thumbnail   String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  // Relations
+  user_courses UserCourse[]
+}
+
+model UserCourse {
+  id          String       @id @default(uuid())
+  user_id     String
+  course_id   String
+  status      CourseStatus @default(not_started)
+  progress    Int          @default(0) // 0-100
+  started_at  DateTime?
+  completed_at DateTime?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, course_id])
+}
+
+model Assessment {
+  id          String              @id @default(uuid())
+  title       String
+  category    String
+  questions   Json                // Store questions as JSON
+  difficulty  AssessmentDifficulty @default(medium)
+  created_at  DateTime            @default(now())
+  updated_at  DateTime            @updatedAt
+
+  // Relations
+  user_assessments UserAssessment[]
+}
+
+model UserAssessment {
+  id            String   @id @default(uuid())
+  user_id       String
+  assessment_id String
+  score         Int
+  passed        Boolean
+  taken_at      DateTime @default(now())
+
+  // Relations
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  assessment Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, assessment_id])
+}
+
+model Job {
+  id              String          @id @default(uuid())
+  title           String
+  company         String
+  description     String
+  location        String
+  type            JobType         @default(full_time)
+  salary_range    String?
+  required_skills String[]        @default([])
+  application_link String
+  posted_at       DateTime        @default(now())
+  expires_at      DateTime?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relations
+  user_jobs UserJob[]
+}
+
+model UserJob {
+  id         String            @id @default(uuid())
+  user_id    String
+  job_id     String
+  status     ApplicationStatus @default(saved)
+  applied_at DateTime?
+  notes      String?
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [job_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, job_id])
+}
+
+model Mentor {
+  id                String   @id @default(uuid())
+  user_id           String   @unique
+  expertise         String[] @default([])
+  availability      String?
+  rate              Int?     // Optional: hourly rate in local currency
+  bio               String?
+  years_experience  Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
